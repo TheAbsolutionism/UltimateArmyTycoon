@@ -1,7 +1,14 @@
 -- I Would Obfuscate, Only Reason I do Obfuscate is incase Developers of game look at this and make patches
 
-
 --[[
+    When Inserting Name and Evolution you dont have to be case sensitive, you can be if you want to
+    But I made it where you could do
+    "kuNaI NINja" for NPC Name;
+    "ulTRa iNsTInCT" For Evolution;
+    and it will work
+
+    However please make sure the NAME and EVOLUTION are spelled correctly grammatically
+
     Evolutions = {
         '',
         'Mighty','Plasma','Gigamax',
