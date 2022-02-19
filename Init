@@ -1,0 +1,217 @@
+-- I Would Obfuscate, Only Reason I do Obfuscate is incase Developers of game look at this and make patches
+
+
+--[[
+    Evolutions = {
+        '',
+        'Mighty','Plasma','Gigamax',
+        'Mega','Colossal','Godspeed',
+        'Dynamax','Beast','Ultra Instinct'
+    }
+]]
+
+local Exploiter = game:GetService('Players').LocalPlayer
+local UIS = game:GetService('UserInputService')
+local MPS = game:GetService('MarketplaceService')
+local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local NPCMod = ReplicatedStorage.Data.NPC
+local shutdown = false
+local farming = false
+
+local Evolutions = {
+    '',
+    'Mighty','Plasma','Gigamax',
+    'Mega','Colossal','Godspeed',
+    'Dynamax','Beast','Ultra Instinct'
+}
+
+local PData = require(Exploiter.PlayerScripts.Launcher.Utilities.PlayerData)
+
+
+local v10 = require(NPCMod);
+local GetData = v10.getNPCStats(Strongest.name);
+local SpawnRE = ReplicatedStorage.Events.Inventory.Spawn
+local ResetRE = ReplicatedStorage.Events.Inventory.Reset
+local JoinRE = ReplicatedStorage.Events.Misc.JoinQueue
+local Timer = game:GetService("Workspace").Map.SurvivalMode.BillboardGui.Timer
+
+local BA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527041)
+local UA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527206)
+local Tycoon = game.Workspace:FindFirstChild(Exploiter.Name.."'s Tycoon")
+local C1P = Tycoon:FindFirstChild('Camp1Premium')
+local C2P = Tycoon:FindFirstChild('Camp2Premium')
+
+local TotalArmySize = (10 * (PData.armySpaceMultiplier * 10)) + (BA and 50) + (UA and 100) + (C1P and 5) + (C2P and 5)
+local NumToSpawn = math.floor(TotalArmySize/GetData.armySpace)
+local Spawned = 0
+local ActiveSize = 0
+local Original = {}
+local Strongest = {
+    ['power'] = 0;
+}
+
+
+function CheckActive()
+    for i,v in pairs(PData.activeTroops) do
+        local ThisData = v10.getNPCStats(v.name);
+        ActiveSize = ActiveSize + ThisData.armySpace
+        Spawned = Spawned+1
+    end
+end
+function ResetArmy()
+    Spawned = 0
+    ActiveSize = 0
+    ResetRE:FireServer()
+end
+function SpawnArmy()
+    local good = true
+    for i = 0,NumToSpawn,1 do
+        wait()
+        if PData.mana < GetData.manaCost or Spawned >= NumToSpawn or (ActiveSize+GetData.armySpace) > TotalArmySize or shutdown == true or farming == false then
+            break
+        else
+            SpawnRE:FireServer({Strongest['id']})
+            Spawned = Spawned+1
+            ActiveSize = ActiveSize + GetData.armySpace
+        end
+    end
+end
+function CheckDesired()
+    local good = true
+    local has = true
+    if _G['DesiredNPC'] == nil or type(_G['DesiredNPC']) ~= 'table' then
+        print('[ERROR] - _G.DesiredNPC Not Found / Not a Table')
+        good = false
+    else
+        if _G['DesiredNPC']['Name'] == nil then
+            print('[ERROR] - _G.DesiredNPC.Name = nil')
+            good = false
+        else
+            local found = false
+            for i,v in pairs(NPCMod.Stats:GetChildren()) do
+                if string.lower(_G['DesiredNPC'].Name) == string.lower(v.Name) then
+                    found = true
+                    break
+                end
+            end
+            if found == false then
+                print('[ERROR] - "'.._G['DesiredNPC'].Name..'"  NPC Does Not Exist')
+                good = false
+            else
+                if _G['DesiredNPC']['Evolution'] == nil then
+                    print('[ERROR] - _G.DesiredNPC.Evolution = nil')
+                    good = false
+                else
+                    local efound = false
+                    for i,v in pairs(Evolutions) do
+                        if string.lower(_G['DesiredNPC'].Evolution) == string.lower(v) then
+                            efound = true
+                            break
+                        end
+                    end
+                    if efound == false then
+                        print('[ERROR] - "'.._G['DesiredNPC'].Evolution..'" Does Not Exist')
+                        good = false
+                    else
+                        local Potential = {}
+                        local PotCount = 0
+                        Strongest = {
+                            ['power'] = 0;
+                        }
+                        for i,v in pairs(PData.unlockedTroops) do
+                            if string.lower(v.name) == string.lower(_G['DesiredNPC'].Name) then
+                                if v.evolution then
+                                    if string.lower(v.evolution.name) == string.lower(_G['DesiredNPC'].Evolution) then
+                                        Potential[i] = v;
+                                        Potential[i]['id'] = i
+                                        PotCount = PotCount+1
+                                    end
+                                end
+                            end
+                        end
+                        if PotCount > 0 then
+                            for i,v in pairs(Potential) do
+                                if v.power > Strongest.power then
+                                    Strongest = v
+                                end
+                            end
+                        else
+                            print('[ERROR] - Could Not Find NPC: "'.._G['DesiredNPC'].Name..'" With "'.._G['DesiredNPC'].Evolution..'" Evolution')
+                            good = false
+                            has = false
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return good,has
+end
+
+function Farm()
+    while wait() do
+        if shutdown == true or farming == false then break end
+        print('[SCRIPT] - Checking Active')
+        CheckActive()
+        repeat wait() until PData.mana >= (GetData.manaCost*10) or shutdown == true or farming == false
+        if shutdown == true or farming == false then break end
+        print('[SCRIPT] - Spawning Army')
+        SpawnArmy()
+        repeat wait() until Timer.Text ~= 'Round In Progress' or shutdown == true or farming == false
+        if shutdown == true or farming == false then break end
+        print('[SCRIPT] - Joining Queue')
+        JoinRE:FireServer()
+        repeat wait() until Timer.Text == 'Round In Progress' or shutdown == true or farming == false
+        wait()
+        print('[SCRIPT] - Waiting For Round End')
+        repeat wait() until Timer.Text ~= 'Round In Progress' or shutdown == true or farming == false
+        if shutdown == true or farming == false then break end
+        print('[SCRIPT] - Resetting')
+        ResetArmy()
+        wait(2)
+        local good,has = CheckDesired()
+        if good == false then
+            if has == true then
+                print('[WARNING] - Farming Not Enabled due to Invalid _G.DesiredNPC format!')
+                print('[WARNING] - Please Fix _G.DesiredNPC to format then Try Again')
+            elseif has == false then
+                print('[WARNING] - Farming Not Enabled due to Now Owning Desired NPC or NPC w/ Evolution')
+                print('[WARNING] - Please Fix _G.DesiredNPC to Owned NPC and Owned NPC w/ Evolution')
+            end
+            print('[TIP] - Do Not Have To Re-Execute loadstring, just _G.DesiredNPC = {["Name"] = "NPC";["Evolution"] = "Evolution";}')
+            print('[SCRIPT] - Farming Disabled')
+        end
+    end
+end
+local con
+con = UIS.InputEnded:connect(function(input,processed)
+    if shutdown == true then return end
+    if not processed then
+        if input.KeyCode == Enum.KeyCode.KeypadOne then
+            local good,has = CheckDesired()
+            if good == true then
+                farming = (not farming)
+                print('[SCRIPT] - Farming: ',((farming and 'Enabled') or 'Disabled'))
+                if farming then
+                    Farm()
+                end
+            else
+                if has == true then
+                    print('[WARNING] - Farming Not Enabled due to Invalid _G.DesiredNPC format!')
+                    print('[WARNING] - Please Fix _G.DesiredNPC to format then Try Again')
+                elseif has == false then
+                    print('[WARNING] - Farming Not Enabled due to Now Owning Desired NPC or NPC w/ Evolution')
+                    print('[WARNING] - Please Fix _G.DesiredNPC to Owned NPC and Owned NPC w/ Evolution')
+                end
+                print('[TIP] - Do Not Have To Re-Execute loadstring, just _G.DesiredNPC = {["Name"] = "NPC";["Evolution"] = "Evolution";}')
+            end
+        elseif input.KeyCode == Enum.KeyCode.KeypadNine then
+            print('[SCRIPT] - Shutting Down')
+            shutdown = true
+            con:disconnect()
+            con = nil
+        end
+    end
+end)
+
+print('Script Activated')
