@@ -1,5 +1,6 @@
 -- I Would Obfuscate, Only Reason I do Obfuscate is incase Developers of game look at this and make patches
 
+
 --[[
     When Inserting Name and Evolution you dont have to be case sensitive, you can be if you want to
     But I made it where you could do
@@ -48,7 +49,7 @@ local GetData
 local SpawnRE = ReplicatedStorage.Events.Inventory.Spawn
 local ResetRE = ReplicatedStorage.Events.Inventory.Reset
 local JoinRE = ReplicatedStorage.Events.Misc.JoinQueue
-local SM = game:GetService("Workspace").Map.SurvivalMode
+local SM = game:GetService("Workspace").Map:FindFirstChild('SurvivalMode')
 if not SM then
     local cc = Exploiter.Character:GetPrimaryPartCFrame()
     Exploiter.Character:SetPrimaryPartCFrame(CFrame.new(3430.21606, 1118.39856, -1502.22668, -0.760240972, 2.48190641e-08, 0.649641156, -5.28602762e-09, 1, -4.43902266e-08, -0.649641156, -3.71812909e-08, -0.760240972))
@@ -72,6 +73,16 @@ local Strongest = {
     ['power'] = 0;
 }
 
+local function NewNotification(message,dur)
+    game:GetService('StarterGui'):SetCore('SendNotification',{
+        Title = 'Absolute UAT';
+        Icon = '';
+        Text = message;
+        Duration = (dur or 5);
+    })
+    print(message)
+    return
+end
 function CheckActive()
     for i,v in pairs(PData.activeTroops) do
         local ThisData = v10.getNPCStats(v.name);
@@ -101,11 +112,11 @@ function CheckDesired()
     local good = true
     local has = true
     if _G['DesiredNPC'] == nil or type(_G['DesiredNPC']) ~= 'table' then
-        print('[ERROR] - _G.DesiredNPC Not Found / Not a Table')
+        NewNotification('[ERROR] - _G.DesiredNPC Not Found / Not a Table')
         good = false
     else
         if _G['DesiredNPC']['Name'] == nil then
-            print('[ERROR] - _G.DesiredNPC.Name = nil')
+            NewNotification('[ERROR] - _G.DesiredNPC.Name = nil')
             good = false
         else
             local found = false
@@ -116,11 +127,11 @@ function CheckDesired()
                 end
             end
             if found == false then
-                print('[ERROR] - "'.._G['DesiredNPC'].Name..'"  NPC Does Not Exist')
+                NewNotification('[ERROR] - "'.._G['DesiredNPC'].Name..'"  NPC Does Not Exist')
                 good = false
             else
                 if _G['DesiredNPC']['Evolution'] == nil then
-                    print('[ERROR] - _G.DesiredNPC.Evolution = nil')
+                    NewNotification('[ERROR] - _G.DesiredNPC.Evolution = nil')
                     good = false
                 else
                     local efound = false
@@ -131,7 +142,7 @@ function CheckDesired()
                         end
                     end
                     if efound == false then
-                        print('[ERROR] - "'.._G['DesiredNPC'].Evolution..'" Evolution Does Not Exist')
+                        NewNotification('[ERROR] - "'.._G['DesiredNPC'].Evolution..'" Evolution Does Not Exist')
                         good = false
                     else
                         local Potential = {}
@@ -159,7 +170,7 @@ function CheckDesired()
                             GetData = v10.getNPCStats(Strongest.name);
                             NumToSpawn = math.floor(TotalArmySize/GetData.armySpace)
                         else
-                            print('[ERROR] - Could Not Find NPC: "'.._G['DesiredNPC'].Name..'" With "'.._G['DesiredNPC'].Evolution..'" Evolution')
+                            NewNotification('[ERROR] - Could Not Find NPC: "'.._G['DesiredNPC'].Name..'" With "'.._G['DesiredNPC'].Evolution..'" Evolution')
                             good = false
                             has = false
                         end
@@ -174,35 +185,35 @@ end
 function Farm()
     while wait() do
         if shutdown == true or farming == false then break end
-        print('[SCRIPT] - Checking Active')
+        NewNotification('[SCRIPT] - Checking Active')
         CheckActive()
         repeat wait() until PData.mana >= (GetData.manaCost*10) or shutdown == true or farming == false
         if shutdown == true or farming == false then break end
-        print('[SCRIPT] - Spawning Army')
+        NewNotification('[SCRIPT] - Spawning Army')
         SpawnArmy()
         repeat wait() until Timer.Text ~= 'Round In Progress' or shutdown == true or farming == false
         if shutdown == true or farming == false then break end
-        print('[SCRIPT] - Joining Queue')
+        NewNotification('[SCRIPT] - Joining Queue')
         JoinRE:FireServer()
         repeat wait() until Timer.Text == 'Round In Progress' or shutdown == true or farming == false
         wait()
-        print('[SCRIPT] - Waiting For Round End')
+        NewNotification('[SCRIPT] - Waiting For Round End')
         repeat wait() until Timer.Text ~= 'Round In Progress' or shutdown == true or farming == false
         if shutdown == true or farming == false then break end
-        print('[SCRIPT] - Resetting')
+        NewNotification('[SCRIPT] - Resetting')
         ResetArmy()
         wait(2)
         local good,has = CheckDesired()
         if good == false then
             if has == true then
-                print('[WARNING] - Farming Not Enabled due to Invalid _G.DesiredNPC format!')
-                print('[WARNING] - Please Fix _G.DesiredNPC to format then Try Again')
+                NewNotification('[WARNING] - Farming Not Enabled due to Invalid _G.DesiredNPC format!')
+                NewNotification('[WARNING] - Please Fix _G.DesiredNPC to format then Try Again')
             elseif has == false then
-                print('[WARNING] - Farming Not Enabled due to Now Owning Desired NPC or NPC w/ Evolution')
-                print('[WARNING] - Please Fix _G.DesiredNPC to Owned NPC and Owned NPC w/ Evolution')
+                NewNotification('[WARNING] - Farming Not Enabled due to Now Owning Desired NPC or NPC w/ Evolution')
+                NewNotification('[WARNING] - Please Fix _G.DesiredNPC to Owned NPC and Owned NPC w/ Evolution')
             end
-            print('[TIP] - Do Not Have To Re-Execute loadstring, just _G.DesiredNPC = {["Name"] = "NPC";["Evolution"] = "Evolution";}')
-            print('[SCRIPT] - Farming Disabled')
+            NewNotification('[TIP] - Do Not Have To Re-Execute loadstring, just _G.DesiredNPC = {["Name"] = "NPC";["Evolution"] = "Evolution";}')
+            NewNotification('[SCRIPT] - Farming Disabled')
         end
     end
 end
@@ -214,22 +225,22 @@ con = UIS.InputEnded:connect(function(input,processed)
             local good,has = CheckDesired()
             if good == true then
                 farming = (not farming)
-                print('[SCRIPT] - Farming: ',((farming and 'Enabled') or 'Disabled'))
+                NewNotification('[SCRIPT] - Farming: ',((farming and 'Enabled') or 'Disabled'))
                 if farming then
                     Farm()
                 end
             else
                 if has == true then
-                    print('[WARNING] - Farming Not Enabled due to Invalid _G.DesiredNPC format!')
-                    print('[WARNING] - Please Fix _G.DesiredNPC to format then Try Again')
+                    NewNotification('[WARNING] - Farming Not Enabled due to Invalid _G.DesiredNPC format!')
+                    NewNotification('[WARNING] - Please Fix _G.DesiredNPC to format then Try Again')
                 elseif has == false then
-                    print('[WARNING] - Farming Not Enabled due to Now Owning Desired NPC or NPC w/ Evolution')
-                    print('[WARNING] - Please Fix _G.DesiredNPC to Owned NPC and Owned NPC w/ Evolution')
+                    NewNotification('[WARNING] - Farming Not Enabled due to Now Owning Desired NPC or NPC w/ Evolution')
+                    NewNotification('[WARNING] - Please Fix _G.DesiredNPC to Owned NPC and Owned NPC w/ Evolution')
                 end
-                print('[TIP] - Do Not Have To Re-Execute loadstring, just _G.DesiredNPC = {["Name"] = "NPC";["Evolution"] = "Evolution";}')
+                NewNotification('[TIP] - Do Not Have To Re-Execute loadstring, just _G.DesiredNPC = {["Name"] = "NPC";["Evolution"] = "Evolution";}')
             end
         elseif input.KeyCode == Enum.KeyCode.KeypadNine then
-            print('[SCRIPT] - Shutting Down')
+            NewNotification('[SCRIPT] - Shutting Down')
             shutdown = true
             con:disconnect()
             con = nil
@@ -237,6 +248,7 @@ con = UIS.InputEnded:connect(function(input,processed)
     end
 end)
 
-print('Script Activated')
+NewNotification('[SCRIPT] - Activated')
+NewNotification('[SCRIPT] - Press 1 on Keypad To Start')
 
 end
