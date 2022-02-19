@@ -1,7 +1,6 @@
 -- I Would Obfuscate, Only Reason I do Obfuscate is incase Developers of game look at this and make patches
 
 
-
 --[[
     Evolutions = {
         '',
@@ -10,6 +9,14 @@
         'Dynamax','Beast','Ultra Instinct'
     }
 ]]
+
+repeat wait() until game ~= nil
+repeat wait() until #game:GetChildren() > 70
+repeat wait() until game:GetService('Players') ~= nil
+repeat wait() until game:GetService('Players').LocalPlayer ~= nil
+repeat wait() until game.gameId ~= nil and game.gameId ~= 0
+if game.gameId ~= 2911841210 then return
+elseif game.gameId == 2911841210 then 
 
 local Exploiter = game:GetService('Players').LocalPlayer
 local UIS = game:GetService('UserInputService')
@@ -224,3 +231,5 @@ con = UIS.InputEnded:connect(function(input,processed)
 end)
 
 print('Script Activated')
+
+end
