@@ -1,6 +1,7 @@
 -- I Would Obfuscate, Only Reason I do Obfuscate is incase Developers of game look at this and make patches
 
 
+
 --[[
     Evolutions = {
         '',
@@ -29,11 +30,18 @@ local PData = require(Exploiter.PlayerScripts.Launcher.Utilities.PlayerData)
 
 
 local v10 = require(NPCMod);
-local GetData = v10.getNPCStats(Strongest.name);
+local GetData
 local SpawnRE = ReplicatedStorage.Events.Inventory.Spawn
 local ResetRE = ReplicatedStorage.Events.Inventory.Reset
 local JoinRE = ReplicatedStorage.Events.Misc.JoinQueue
-local Timer = game:GetService("Workspace").Map.SurvivalMode.BillboardGui.Timer
+local SM = game:GetService("Workspace").Map.SurvivalMode
+if not SM then
+    local cc = Exploiter.Character:GetPrimaryPartCFrame()
+    Exploiter.Character:SetPrimaryPartCFrame(CFrame.new(3430.21606, 1118.39856, -1502.22668, -0.760240972, 2.48190641e-08, 0.649641156, -5.28602762e-09, 1, -4.43902266e-08, -0.649641156, -3.71812909e-08, -0.760240972))
+    wait(1)
+    Exploiter.Character:SetPrimaryPartCFrame(cc)
+end
+local Timer = SM.BillboardGui.Timer
 
 local BA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527041)
 local UA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527206)
@@ -42,14 +50,13 @@ local C1P = Tycoon:FindFirstChild('Camp1Premium')
 local C2P = Tycoon:FindFirstChild('Camp2Premium')
 
 local TotalArmySize = (10 * (PData.armySpaceMultiplier * 10)) + (BA and 50) + (UA and 100) + (C1P and 5) + (C2P and 5)
-local NumToSpawn = math.floor(TotalArmySize/GetData.armySpace)
+local NumToSpawn
 local Spawned = 0
 local ActiveSize = 0
 local Original = {}
 local Strongest = {
     ['power'] = 0;
 }
-
 
 function CheckActive()
     for i,v in pairs(PData.activeTroops) do
@@ -110,7 +117,7 @@ function CheckDesired()
                         end
                     end
                     if efound == false then
-                        print('[ERROR] - "'.._G['DesiredNPC'].Evolution..'" Does Not Exist')
+                        print('[ERROR] - "'.._G['DesiredNPC'].Evolution..'" Evolution Does Not Exist')
                         good = false
                     else
                         local Potential = {}
@@ -135,6 +142,8 @@ function CheckDesired()
                                     Strongest = v
                                 end
                             end
+                            GetData = v10.getNPCStats(Strongest.name);
+                            NumToSpawn = math.floor(TotalArmySize/GetData.armySpace)
                         else
                             print('[ERROR] - Could Not Find NPC: "'.._G['DesiredNPC'].Name..'" With "'.._G['DesiredNPC'].Evolution..'" Evolution')
                             good = false
