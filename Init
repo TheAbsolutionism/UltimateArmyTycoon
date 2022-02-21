@@ -1,6 +1,5 @@
 -- I Would Obfuscate, Only Reason I do Obfuscate is incase Developers of game look at this and make patches
 
---_G['4042427666'] = function(library,Exploiter,HubFile,GameID,ReplicatedStorage,Http)
 repeat wait() until game ~= nil
 repeat wait() until #game:GetChildren() > 70
 repeat wait() until game:GetService('Players') ~= nil
@@ -21,8 +20,14 @@ local Exploiter = game:GetService('Players').LocalPlayer
 local ReplicatedStorage = game:GetService('ReplicatedStorage')
 local Http = game:GetService('HttpService')
 
-local Version = '1.0.0'
+local Version = '1.0.1'
 local UpdateNotes = {
+    ['Version 1.0.1'] = {
+        ['Added'] = {
+            '+ Index Tier Camp Reward Added to Script Total Army Size';
+            '+ Checks For Any New Camp Add-Ons if Bought During Script Activation';
+        };
+    };
     ['Version 1.0.0'] = {
         ['Added'] = {
             '+ Select Troop';
@@ -91,6 +96,7 @@ local GetData
 local SpawnRE = ReplicatedStorage.Events.Inventory.Spawn
 local ResetRE = ReplicatedStorage.Events.Inventory.Reset
 local JoinRE = ReplicatedStorage.Events.Misc.JoinQueue
+local GFunctions = require(ReplicatedStorage.SharedModules.GlobalFunctions)
 local SM = game:GetService("Workspace").Map:FindFirstChild('SurvivalMode')
 if not SM then
     local cc = Exploiter.Character:GetPrimaryPartCFrame()
@@ -107,7 +113,9 @@ local Tycoon = game.Workspace:FindFirstChild(Exploiter.Name.."'s Tycoon")
 local C1P = Tycoon:FindFirstChild('Camp1Premium')
 local C2P = Tycoon:FindFirstChild('Camp2Premium')
 
-local TotalArmySize = (10 * (PData.armySpaceMultiplier * 10)) + (BA and 50) + (UA and 100) + (C1P and 5) + (C2P and 5)
+local TierOn = GFunctions.returnTier(GFunctions.troopIndexAmount(PData))
+
+local TotalArmySize = (10 * (PData.armySpaceMultiplier * 10)) + (BA and 50) + (UA and 100) + (C1P and 5) + (C2P and 5) + (TierOn*15)
 local NumToSpawn
 local Spawned = 0
 local ActiveSize = 0
@@ -263,6 +271,29 @@ function CheckDesired()
 
     return good
 end
+function CheckTier()
+    local thistier = GFunctions.returnTier(GFunctions.troopIndexAmount(PData))
+    if thistier > TierOn then
+        TotalArmySize = TotalArmySize+((thistier-TierOn)*15)
+    end
+
+    if BA == false then
+        BA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527041)
+        TotalArmySize = TotalArmySize+(BA and 50)
+    end
+    if UA == false then
+        UA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527206)
+        TotalArmySize = TotalArmySize+(UA and 100)
+    end
+    if C1P == nil then
+        C1P = Tycoon:FindFirstChild('Camp1Premium')
+        TotalArmySize = TotalArmySize+(C1P and 5)
+    end
+    if C2P == nil then
+        C2P = Tycoon:FindFirstChild('Camp2Premium')
+        TotalArmySize = TotalArmySize+(C2P and 5)
+    end
+end
 
 ----------------------------------------------------- FUNCTIONS
 
@@ -277,6 +308,8 @@ DoFunctions['AutoSurvive'] = function(A)
             break
         end
         if PlayerSettings[A] == false then break end
+        print('[SCRIPT] - Checking Tier')
+        CheckTier()
         print('[SCRIPT] - Checking Active')
         CheckActive()
         repeat wait() until PData.mana >= (GetData.manaCost*10) or PlayerSettings[A] == false 
@@ -347,5 +380,3 @@ library.makeplist = false
 library.Ready()
 
 end
---end
-
