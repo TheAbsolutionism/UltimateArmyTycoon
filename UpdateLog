@@ -1,0 +1,14 @@
+['Version 1.0.1'] = {
+    ['Added'] = {
+        '+ Index Tier Camp Reward Added to Script Total Army Size';
+        '+ Checks For Any New Camp Add-Ons if Bought During Script Activation';
+    };
+};
+['Version 1.0.0'] = {
+    ['Added'] = {
+        '+ Select Troop';
+        '+ Select Evolution';
+        '+ Auto Survive';
+        '+ Script'
+    };
+};
