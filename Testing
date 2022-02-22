@@ -1,4 +1,7 @@
 --_G['4042427666'] = function(library,Exploiter,HubFile,GameID,ReplicatedStorage,Http)
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/TheAbsolutionism/UltimateArmyTycoon/main/Testing", true))()
+
+
 print('Loadstring Activated')
 
 repeat wait() until game ~= nil
@@ -30,6 +33,7 @@ repeat
     end
 until library ~= nil or wait(10)
 if library == nil then
+    print('[ERROR] - Could Not Load Library, Ending Script')
     return 
 end
 --local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/TheAbsolutionism/AbsolutionismWallyLib/main/Library", true))()
