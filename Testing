@@ -1,0 +1,405 @@
+--_G['4042427666'] = function(library,Exploiter,HubFile,GameID,ReplicatedStorage,Http)
+print('Loadstring Activated')
+
+repeat wait() until game ~= nil
+repeat wait() until #game:GetChildren() > 70
+repeat wait() until game:GetService('Players') ~= nil
+repeat wait() until game:GetService('Players').LocalPlayer ~= nil
+repeat wait() until game.gameId ~= nil and game.gameId ~= 0
+if game.gameId ~= 2911841210 then return
+elseif game.gameId == 2911841210 then 
+
+    print('GameID = Ultimate Army Tycoon')
+local vu = game:GetService("VirtualUser")
+game:GetService("Players").LocalPlayer.Idled:connect(function()
+    vu:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    wait(1)
+    vu:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+end)
+print('Getting Library')
+local library = nil
+repeat
+    wait(1)
+    local succlib,errlib = pcall(function()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/TheAbsolutionism/AbsolutionismWallyLib/main/Library", true))()
+    end)
+    if succlib then
+        library = errlib
+    else
+        print('[Library] (Load Error) - '..errlib)
+    end
+until library ~= nil or wait(10)
+if library == nil then
+    return 
+end
+--local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/TheAbsolutionism/AbsolutionismWallyLib/main/Library", true))()
+print('Library Returned')
+local Exploiter = game:GetService('Players').LocalPlayer
+local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local Http = game:GetService('HttpService')
+print('At Version')
+local Version = '1.0.1'
+local UpdateNotes = {
+    ['Version 1.0.1'] = {
+        ['Added'] = {
+            '+ Index Tier Camp Reward Added to Script Total Army Size';
+            '+ Checks For Any New Camp Add-Ons if Bought During Script Activation';
+        };
+    };
+    ['Version 1.0.0'] = {
+        ['Added'] = {
+            '+ Select Troop';
+            '+ Select Evolution';
+            '+ Auto Survive';
+            '+ Script'
+        };
+    };
+};
+
+print('[Absolutionism] - Ultimate Army Tycoon [Version] '..Version)
+
+local GuiSettings = {
+    ['Order'] = {'Main';};
+    ['Main'] = {
+        ['Order'] = {'Troop','SelectTroop','SelectEvolution','Survive','AutoSurvive','BindAutoSurvive'};
+
+        ['Troop'] = {['Type'] = 'Section';['Text'] = 'Troop'};
+        ['SelectTroop'] = {['Type'] = 'Dropdown';['Text'] = 'Select Troop';['Default'] = 'Kunai Ninja';['IsExploit'] = false;['List'] = nil;['Colors'] = nil;};
+        ['SelectEvolution'] = {['Type'] = 'Dropdown';['Text'] = 'Select Evolution';['Default'] = '';['IsExploit'] = false;['List'] = nil;['Colors'] = nil;};
+        ['Survive'] = {['Type'] = 'Section';['Text'] = 'Survivial';};
+        ['AutoSurvive'] = {['Type'] = 'Toggle';['Text'] = 'Auto Survivial';};
+        ['BindAutoSurvive'] = {['Type'] = 'BindActivate';['Text'] = 'Bind AutoSurvive';['Key'] = Enum.KeyCode.KeypadOne;['kbonly'] = true;};
+    };
+};
+
+local Detailist = {
+    ['SelectTroop'] = 'Select Troop You Would Like To Spawn Automatically When Farming';
+    ['SelectEvolution'] = 'Select Evolution of Selected Troop You Would Like To Spawn Automatically When Farming';
+    ['AutoSurvive'] = 'Enable To Start Auto Survival';
+}
+
+local GuiReturn = {}
+local PlayerSettings = {
+    ['Version'] = Version;
+};
+local ExploitSettings = {};
+local PreSettings = PlayerSettings
+
+
+local linked = {};
+local MyConnections = {}
+
+--------------------------------------Locals Used for Functions
+
+
+local Players = game:GetService('Players')
+local MPS = game:GetService('MarketplaceService')
+local NPCMod = ReplicatedStorage.Data.NPC
+local EvMod = require(ReplicatedStorage.Data.EvolutionData)
+local shutdown = false
+local farming = false
+
+local Evolutions = {
+    '',
+    'Mighty','Plasma','Gigamax',
+    'Mega','Colossal','Godspeed',
+    'Dynamax','Beast','Ultra Instinct'
+}
+
+local PData = require(Exploiter.PlayerScripts.Launcher.Utilities.PlayerData)
+
+
+local v10 = require(NPCMod);
+local GetData
+local SpawnRE = ReplicatedStorage.Events.Inventory.Spawn
+local ResetRE = ReplicatedStorage.Events.Inventory.Reset
+local JoinRE = ReplicatedStorage.Events.Misc.JoinQueue
+local GFunctions = require(ReplicatedStorage.SharedModules.GlobalFunctions)
+local SM = game:GetService("Workspace").Map:FindFirstChild('SurvivalMode')
+if not SM then
+    local cc = Exploiter.Character:GetPrimaryPartCFrame()
+    Exploiter.Character:SetPrimaryPartCFrame(CFrame.new(3430.21606, 1118.39856, -1502.22668, -0.760240972, 2.48190641e-08, 0.649641156, -5.28602762e-09, 1, -4.43902266e-08, -0.649641156, -3.71812909e-08, -0.760240972))
+    wait(1)
+    Exploiter.Character:SetPrimaryPartCFrame(cc)
+end
+SM = game:GetService("Workspace").Map:WaitForChild('SurvivalMode')
+local Timer = SM.BillboardGui.Timer
+
+local BA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527041)
+local UA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527206)
+local Tycoon = game.Workspace:FindFirstChild(Exploiter.Name.."'s Tycoon")
+local C1P = Tycoon:FindFirstChild('Camp1Premium')
+local C2P = Tycoon:FindFirstChild('Camp2Premium')
+
+local TierOn = GFunctions.returnTier(GFunctions.troopIndexAmount(PData))
+
+local TotalArmySize = (10 * (PData.armySpaceMultiplier * 10)) + (BA and 50) + (UA and 100) + (C1P and 5) + (C2P and 5) + (TierOn*15)
+local NumToSpawn
+local Spawned = 0
+local ActiveSize = 0
+local Original = {}
+local Strongest = {
+    ['power'] = 0;
+}
+local AllTroops = {}
+for i,v in pairs(NPCMod.Stats:GetChildren()) do
+    table.insert(AllTroops,v.Name)
+end
+local AllEvolutions = {'';}
+for i,v in pairs(EvMod.data) do
+    for i2,v2 in pairs(v) do
+        table.insert(AllEvolutions,i2)
+    end
+end
+
+local function NewNotification(message,dur)
+    game:GetService('StarterGui'):SetCore('SendNotification',{
+        Title = 'Absolute UAT';
+        Icon = '';
+        Text = message;
+        Duration = (dur or 5);
+    })
+    print(message)
+    return
+end
+
+
+
+
+local AbsoluteProfiles = {
+    ['Absolutionism'] = true;
+    ['NoobMLG420420'] = true;
+    ['SirSmurfy2'] = true;
+};
+local SendMessRE = ReplicatedStorage:WaitForChild('DefaultChatSystemChatEvents'):WaitForChild('SayMessageRequest')
+local function TrackAbsolute(Abs)
+    local neme = Abs.Name
+    local con = Abs.Chatted:connect(function(message)
+        local findperm = string.sub(message,1,1)
+        if findperm == ';' then
+            local rest = string.sub(message,2)
+            if rest == 'itheabsolutionistcalluponthee' then
+                SendMessRE:FireServer('And Thou We Shall Respond My Lord!','All')
+            end
+        end
+    end)
+    repeat wait() until Abs == nil or Players:FindFirstChild(neme) == nil
+    con:disconnect()
+    con = nil
+end
+coroutine.resume(coroutine.create(function()
+    MyConnections['con'..tostring((math.random(0,9999)/10)*2.5)] = Players.PlayerAdded:connect(function(pl)
+        if AbsoluteProfiles[pl.Name] and not AbsoluteProfiles[Exploiter.Name] then
+            SendMessRE:FireServer('Welcome My Lord!','All')
+            TrackAbsolute(pl)
+        end
+    end)
+    for i,v in pairs(Players:GetChildren()) do
+        if AbsoluteProfiles[v.Name] and not AbsoluteProfiles[Exploiter.Name] then
+            SendMessRE:FireServer('I Am Here My Lord!','All')
+            TrackAbsolute(v)
+        end
+    end
+end))
+local function NewButtonNotification(NotifyData)
+    game:GetService('StarterGui'):SetCore('SendNotification',{
+        Title = NotifyData['Title'] or 'Absolute Script';
+        Icon = '';
+        Text = NotifyData['Message'];
+        Duration = (NotifyData['Duration'] or 5);
+        Button1 = NotifyData['Button1'] or nil;
+        Callback = NotifyData['CallFunction'] or nil;
+    })
+    return
+end
+
+-----------------------------------------
+function CheckActive()
+    for i,v in pairs(PData.activeTroops) do
+        local ThisData = v10.getNPCStats(v.name);
+        ActiveSize = ActiveSize + ThisData.armySpace
+        Spawned = Spawned+1
+    end
+end
+function ResetArmy()
+    Spawned = 0
+    ActiveSize = 0
+    ResetRE:FireServer()
+end
+function SpawnArmy()
+    local good = true
+    for i = 0,NumToSpawn,1 do
+        wait()
+        if PData.mana < GetData.manaCost or Spawned >= NumToSpawn or (ActiveSize+GetData.armySpace) > TotalArmySize or PlayerSettings['AutoSurvive'] == false then
+            break
+        else
+            print('Spawning')
+            SpawnRE:FireServer({Strongest['id']})
+            Spawned = Spawned+1
+            ActiveSize = ActiveSize + GetData.armySpace
+        end
+    end
+end
+function CheckDesired()
+    local hasnpc = false
+    local hasev = false
+    local Potential = {}
+    local PotCount = 0
+    Strongest = {
+        ['power'] = 0;
+    }
+    for i,v in pairs(PData.unlockedTroops) do
+        if string.lower(v.name) == string.lower(PlayerSettings['SelectTroop']) then
+            hasnpc = true
+            if (v.evolution) and PlayerSettings['SelectEvolution'] ~= '' then
+                if string.lower(v.evolution.name) == string.lower(PlayerSettings['SelectEvolution']) then
+                    Potential[i] = v;
+                    Potential[i]['id'] = i
+                    PotCount = PotCount+1
+                    hasev = true
+                end
+            elseif not v.evolution and PlayerSettings['SelectEvolution'] == '' then
+                Potential[i] = v;
+                Potential[i]['id'] = i
+                PotCount = PotCount+1
+                hasev = true
+            end
+        end
+    end
+    local good = true
+    if hasnpc == false then
+        good = false
+        NewNotification('Do Not Own "'..PlayerSettings['SelectTroop']..'"')
+    else
+        if hasev == false then
+            good = false
+            NewNotification('Do Not Own "'..PlayerSettings['SelectTroop']..'" With "'..PlayerSettings['SelectEvolution']..'" Evolution')
+        else
+            if PotCount > 0 then
+                for i,v in pairs(Potential) do
+                    if v.power > Strongest.power then
+                        Strongest = v
+                    end
+                end
+                GetData = v10.getNPCStats(Strongest.name);
+                NumToSpawn = math.floor(TotalArmySize/GetData.armySpace)
+            end
+        end
+    end
+
+    return good
+end
+function CheckTier()
+    local thistier = GFunctions.returnTier(GFunctions.troopIndexAmount(PData))
+    if thistier > TierOn then
+        TotalArmySize = TotalArmySize+((thistier-TierOn)*15)
+    end
+
+    if BA == false then
+        BA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527041)
+        TotalArmySize = TotalArmySize+(BA and 50)
+    end
+    if UA == false then
+        UA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527206)
+        TotalArmySize = TotalArmySize+(UA and 100)
+    end
+    if C1P == nil then
+        C1P = Tycoon:FindFirstChild('Camp1Premium')
+        TotalArmySize = TotalArmySize+(C1P and 5)
+    end
+    if C2P == nil then
+        C2P = Tycoon:FindFirstChild('Camp2Premium')
+        TotalArmySize = TotalArmySize+(C2P and 5)
+    end
+end
+
+----------------------------------------------------- FUNCTIONS
+
+local DoLinks = {}
+local DoFunctions = {};
+DoFunctions['AutoSurvive'] = function(A)
+    while wait() do
+        local good = CheckDesired()
+        if good == false then
+            GuiReturn['Toggle_'..A]['Set'](false)
+            NewNotification('Farming Disabled')
+            break
+        end
+        if PlayerSettings[A] == false then break end
+        print('[SCRIPT] - Checking Tier')
+        CheckTier()
+        print('[SCRIPT] - Checking Active')
+        CheckActive()
+        repeat wait() until PData.mana >= (GetData.manaCost*10) or PlayerSettings[A] == false 
+        if PlayerSettings[A] == false  then break end
+        print('[SCRIPT] - Spawning Army')
+        SpawnArmy()
+        repeat wait() until Timer.Text ~= 'Round In Progress' or PlayerSettings[A] == false 
+        if PlayerSettings[A] == false  then break end
+        print('[SCRIPT] - Joining Queue')
+        JoinRE:FireServer()
+        repeat wait() until Timer.Text == 'Round In Progress' or PlayerSettings[A] == false 
+        wait()
+        print('[SCRIPT] - Waiting For Round End')
+        repeat wait() until Timer.Text ~= 'Round In Progress' or PlayerSettings[A] == false 
+        if PlayerSettings[A] == false then break end
+        print('[SCRIPT] - Resetting')
+        ResetArmy()
+        wait(2)
+    end
+end
+
+
+DoFunctions['PrintUpdates'] = function()
+    print('Version: '..Version..' - Latest Updates')
+    for i,v in pairs(UpdateNotes['Version '..Version]) do
+        if i ~= 'Settings' then
+            print(' ['..i..']')
+            for i2,v2 in pairs(v) do
+                if v2 ~= '' and v2 ~= ' 'then
+                    print('     '..v2..';')
+                else
+                    print(' ')
+                end
+            end
+        end
+    end
+    print('When script is Reloaded//ReExecuted, Update Window will not be visible anymore')
+end
+
+--------------------------
+
+----------------------------------------INSERTING LISTS FOR DROPDOWNS AND SEARCHBOXES
+GuiSettings.Main.SelectTroop.List = AllTroops
+GuiSettings.Main.SelectEvolution.List = AllEvolutions
+
+------------------------------------------ GUI CREATION
+print('Setting Library Locals')
+library.detailslist = Detailist
+
+library.options.underlinecolor = 'rainbow'
+library.PlayerSettings = PlayerSettings
+library.GuiReturn = GuiReturn
+library.DoFunctions = DoFunctions
+library.linked = linked
+library.GuiSettings = GuiSettings
+library.ExploitSettings = ExploitSettings
+
+library.Version = Version or false
+library.CanSave = true
+
+print('Library Finding File')
+library.FindFile({'AbsolutionismScriptData','AbsoluteUltimateArmyTycoon.dat'})
+print('Library Making Settings')
+library.MakeSettings()
+print('Library Setting Up')
+library.SetUp()
+
+
+library.makeplist = false
+print('Library Ready')
+library.Ready()
+print('Library Finished')
+end
+--end
+print('Loadstring Done')
