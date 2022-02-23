@@ -1,5 +1,6 @@
 -- I Would Obfuscate, Only Reason I do Obfuscate is incase Developers of game look at this and make patches
 
+--_G['4042427666'] = function(library,Exploiter,HubFile,GameID,ReplicatedStorage,Http)
 repeat wait() until game ~= nil
 repeat wait() until #game:GetChildren() > 70
 repeat wait() until game:GetService('Players') ~= nil
@@ -115,7 +116,7 @@ local C2P = Tycoon:FindFirstChild('Camp2Premium')
 
 local TierOn = GFunctions.returnTier(GFunctions.troopIndexAmount(PData))
 
-local TotalArmySize = (10 * (PData.armySpaceMultiplier * 10)) + (BA and 50) + (UA and 100) + (C1P and 5) + (C2P and 5) + (TierOn*15)
+local TotalArmySize = (10 * (PData.armySpaceMultiplier * 10)) + (BA == true and 50) + (UA == true and 100) + (C1P ~= nil and 5) + (C2P ~= nil and 5) + (type(TierOn) == 'number' and (TierOn*15))
 local NumToSpawn
 local Spawned = 0
 local ActiveSize = 0
@@ -380,3 +381,4 @@ library.makeplist = false
 library.Ready()
 
 end
+--end
