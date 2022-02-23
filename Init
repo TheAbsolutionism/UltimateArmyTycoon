@@ -44,7 +44,7 @@ print('[Absolutionism] - Ultimate Army Tycoon [Version] '..Version)
 local GuiSettings = {
     ['Order'] = {'Main';};
     ['Main'] = {
-        ['Order'] = {'Troop','SelectTroop','SelectEvolution','Survive','AutoSurvive','BindAutoSurvive'};
+        ['Order'] = {'Troop','SelectTroop','SelectEvolution','Survive','AutoSurvive','BindAutoSurvive','Misc','AutoClaim'};
 
         ['Troop'] = {['Type'] = 'Section';['Text'] = 'Troop'};
         ['SelectTroop'] = {['Type'] = 'Dropdown';['Text'] = 'Select Troop';['Default'] = 'Kunai Ninja';['IsExploit'] = false;['List'] = nil;['Colors'] = nil;};
@@ -52,6 +52,8 @@ local GuiSettings = {
         ['Survive'] = {['Type'] = 'Section';['Text'] = 'Survivial';};
         ['AutoSurvive'] = {['Type'] = 'Toggle';['Text'] = 'Auto Survivial';};
         ['BindAutoSurvive'] = {['Type'] = 'BindActivate';['Text'] = 'Bind AutoSurvive';['Key'] = Enum.KeyCode.KeypadOne;['kbonly'] = true;};
+        ['Misc'] = {['Type'] = 'Section';['Text'] = 'Misc'};
+        ['AutoClaim'] = {['Type'] = 'Toggle';['Text'] = 'Auto Reward Claim'};
     };
 };
 
@@ -115,8 +117,9 @@ local C1P = Tycoon:FindFirstChild('Camp1Premium')
 local C2P = Tycoon:FindFirstChild('Camp2Premium')
 
 local TierOn = GFunctions.returnTier(GFunctions.troopIndexAmount(PData))
+local AppliedTier = 0
 
-local TotalArmySize = (10 * (PData.armySpaceMultiplier * 10)) + (BA == true and 50) + (UA == true and 100) + (C1P ~= nil and 5) + (C2P ~= nil and 5) + (type(TierOn) == 'number' and (TierOn*15))
+local TotalArmySize = (10 * (PData.armySpaceMultiplier * 10))
 local NumToSpawn
 local Spawned = 0
 local ActiveSize = 0
@@ -274,25 +277,26 @@ function CheckDesired()
 end
 function CheckTier()
     local thistier = GFunctions.returnTier(GFunctions.troopIndexAmount(PData))
-    if type(thistier) == 'number' and type(TierOn) == 'number' and thistier > TierOn then
-        TotalArmySize = TotalArmySize+((thistier-TierOn)*15)
+    if thistier > AppliedTier then
+        AppliedTier = thistier
+        TotalArmySize = TotalArmySize+((thistier*15)-15)
     end
 
     if BA == false then
         BA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527041)
-        TotalArmySize = TotalArmySize+(BA and 50)
+        TotalArmySize = TotalArmySize+(BA == true and 50)
     end
     if UA == false then
         UA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527206)
-        TotalArmySize = TotalArmySize+(UA and 100)
+        TotalArmySize = TotalArmySize+(UA == true and 100)
     end
     if C1P == nil then
         C1P = Tycoon:FindFirstChild('Camp1Premium')
-        TotalArmySize = TotalArmySize+(C1P and 5)
+        TotalArmySize = TotalArmySize+(C1P ~= nil and 5)
     end
     if C2P == nil then
         C2P = Tycoon:FindFirstChild('Camp2Premium')
-        TotalArmySize = TotalArmySize+(C2P and 5)
+        TotalArmySize = TotalArmySize+(C2P ~= nil and 5)
     end
 end
 
@@ -317,6 +321,10 @@ DoFunctions['AutoSurvive'] = function(A)
         if PlayerSettings[A] == false  then break end
         print('[SCRIPT] - Spawning Army')
         SpawnArmy()
+        if Timer.Text == 'Round In Progress' then
+            print('[SCRIPT] - Waiting To Join')
+            NewNotification('Waiting For Round To End')
+        end
         repeat wait() until Timer.Text ~= 'Round In Progress' or PlayerSettings[A] == false 
         if PlayerSettings[A] == false  then break end
         print('[SCRIPT] - Joining Queue')
@@ -330,6 +338,43 @@ DoFunctions['AutoSurvive'] = function(A)
         ResetArmy()
         wait(2)
     end
+end
+DoFunctions['AutoClaim'] = function(A)
+    local con
+    local toclaim = RankReward.Main.Gifts.Hitbox
+    local claimgui = toclaim.BillboardGui
+
+    local function ClaimReward()
+        repeat 
+            wait(0.1)
+            firetouchinterest(Exploiter.Character.PrimaryPart,toclaim,0)
+            wait(0.1)
+            firetouchinterest(Exploiter.Character.PrimaryPart,toclaim,1)
+        until claimgui.Enabled == false or PlayerSettings[A] == false or wait(5)
+        if claimgui.Enabled == true and PlayerSettings[A] == true then
+            local cf = Exploiter.Character:GetPrimaryPartCFrame()
+            Exploiter.Character:SetPrimaryPartCFrame(toclaim.CFrame)
+            wait(1)
+            Exploiter.Character:SetPrimaryPartCFrame(cf)
+        end
+        if claimgui.Enabled == false then
+            print('[SCRIPT] - Claim Rank Rewards')
+        end
+    end
+    
+    con = claimgui.Changed:connect(function(prop)
+        if (prop and prop == 'Enabled') or not prop then
+            if claimgui.Enabled == true then
+                ClaimReward()
+            end
+        end
+    end)
+    if claimgui.Enabled == true then
+        ClaimReward()
+    end
+    repeat wait() until PlayerSettings[A] == false
+    con:disconnect()
+    con = nil
 end
 
 
