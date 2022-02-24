@@ -284,19 +284,27 @@ function CheckTier()
 
     if BA == false then
         BA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527041)
-        TotalArmySize = TotalArmySize+(BA == true and 50)
+        if BA == true then
+            TotalArmySize = TotalArmySize+50
+        end
     end
     if UA == false then
         UA = MPS:UserOwnsGamePassAsync(Exploiter.userId,22527206)
-        TotalArmySize = TotalArmySize+(UA == true and 100)
+        if UA == true then
+            TotalArmySize = TotalArmySize+100
+        end
     end
     if C1P == nil then
         C1P = Tycoon:FindFirstChild('Camp1Premium')
-        TotalArmySize = TotalArmySize+(C1P ~= nil and 5)
+        if C1P ~= nil then
+            TotalArmySize = TotalArmySize+5
+        end
     end
     if C2P == nil then
         C2P = Tycoon:FindFirstChild('Camp2Premium')
-        TotalArmySize = TotalArmySize+(C2P ~= nil and 5)
+        if C2P ~= nil then
+            TotalArmySize = TotalArmySize+5
+        end
     end
 end
 
